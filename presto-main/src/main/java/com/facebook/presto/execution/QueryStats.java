@@ -16,6 +16,7 @@ import javax.annotation.concurrent.ThreadSafe;
 public class QueryStats
 {
     private final DateTime createTime;
+
     private final long createNanos;
     @GuardedBy("this")
     private DateTime executionStartTime;
@@ -63,6 +64,12 @@ public class QueryStats
     public DateTime getCreateTime()
     {
         return createTime;
+    }
+
+    @JsonProperty
+    public DateTime getCurrentTime()
+    {
+        return DateTime.now();
     }
 
     @JsonProperty
