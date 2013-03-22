@@ -95,6 +95,7 @@ function renderDoneQueries(queries)
                               return "info";
                       }
                   })
+            .on("click", function(query) { window.location = "query.html?" + query.queryId });
 
     rows.exit()
             .remove();
@@ -143,7 +144,8 @@ function renderRunningQueries(queries)
 
     rows.enter()
             .append("tr")
-            .attr("class", "info");
+            .attr("class", "info")
+            .on("click", function(query) { window.location = "query.html?" + query.queryId });
 
     var cells = rows.selectAll("td")
             .data(function (queryInfo)
