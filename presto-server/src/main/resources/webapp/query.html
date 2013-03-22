@@ -112,11 +112,11 @@ function taskIdComparator(a, b) {
 
 function numericArrayComparator(a, b) {
     for (var i = 0; (i < a.length) && (i < b.length); i++) {
-        if (a[i] < b[i]) return -1;
-        if (a[i] > b[i]) return 1;
+        if (a[i] < b[i]) { return -1; }
+        if (a[i] > b[i]) { return 1; }
     }
-    if (a.length < b.length) return -1;
-    if (a.length > b.length) return 1;
+    if (a.length < b.length) { return -1; }
+    if (a.length > b.length) { return 1; }
     return 0;
 }
 
@@ -397,7 +397,8 @@ function renderStagesTree(source) {
         if (d.children) {
             d._children = d.children;
             d.children = null;
-        } else {
+        }
+        else {
             d.children = d._children;
             d._children = null;
         }

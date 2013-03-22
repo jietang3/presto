@@ -53,27 +53,22 @@
 
 <script>
 
-function redraw()
-{
-    d3.json('/v1/query', function (queries)
-    {
-        var runningQueries = queries.filter(function (query)
-                                            {
-                                                return query.state != 'FINISHED' && query.state != 'FAILED' && query.state != 'CANCELED';
-                                            });
+function redraw() {
+    d3.json('/v1/query', function (queries) {
+        var runningQueries = queries.filter(function (query) {
+            return query.state != 'FINISHED' && query.state != 'FAILED' && query.state != 'CANCELED';
+        });
 
-        var doneQueries = queries.filter(function (query)
-                                         {
-                                             return query.state == 'FINISHED' || query.state == 'FAILED' || query.state == 'CANCELED';
-                                         });
+        var doneQueries = queries.filter(function (query) {
+            return query.state == 'FINISHED' || query.state == 'FAILED' || query.state == 'CANCELED';
+        });
 
         renderRunningQueries(runningQueries);
         renderDoneQueries(doneQueries);
     });
 }
 
-function renderDoneQueries(queries)
-{
+function renderDoneQueries(queries) {
     var tbody = d3.select("#done").select("tbody");
 
     queries = queries.sort(function (a, b) { return d3.ascending(a.queryStats.createTime, b.queryStats.createTime); });
@@ -84,54 +79,51 @@ function renderDoneQueries(queries)
     rows.enter()
             .append("tr")
             .attr("class", function (query) {
-                          switch (query.state) {
-                          case "FINISHED":
-                              return "success";
-                          case "FAILED":
-                              return "error";
-                          case "CANCELED":
-                              return "warning";
-                          default:
-                              return "info";
-                      }
-                  })
-            .on("click", function(query) { window.location = "query.html?" + query.queryId });
+                switch (query.state) {
+                    case "FINISHED":
+                        return "success";
+                    case "FAILED":
+                        return "error";
+                    case "CANCELED":
+                        return "warning";
+                    default:
+                        return "info";
+                }
+            })
+            .on("click", function (query) { window.location = "query.html?" + query.queryId });
 
     rows.exit()
             .remove();
 
     rows.selectAll("td")
             .data(function (queryInfo) {
-                      var stages = allStages(queryInfo.outputStage);
+                var stages = allStages(queryInfo.outputStage);
 
-                      var tasks = flatten(stages.map(function (stage) { return stage.tasks; }));
+                var tasks = flatten(stages.map(function (stage) { return stage.tasks; }));
 
-                      var splits = d3.sum(tasks.map(function (task) { return task.stats.splits }));
-                      var startedSplits = d3.sum(tasks.map(function (task) { return task.stats.startedSplits }));
-                      var completedSplits = d3.sum(tasks.map(function (task) { return task.stats.completedSplits }));
+                var splits = d3.sum(tasks.map(function (task) { return task.stats.splits }));
+                var startedSplits = d3.sum(tasks.map(function (task) { return task.stats.startedSplits }));
+                var completedSplits = d3.sum(tasks.map(function (task) { return task.stats.completedSplits }));
 
-                      return [
-                          queryInfo.queryId,
-                          d3.time.format("%Y-%m-%d %H:%M:%S")(new Date(queryInfo.queryStats.createTime)),
-                          queryInfo.query,
-                          queryInfo.session.user,
-                          queryInfo.state,
-                          completedSplits,
-                          splits,
-                          d3.format("%")(completedSplits / splits)
-                      ]
-                  })
+                return [
+                    queryInfo.queryId,
+                    d3.time.format("%Y-%m-%d %H:%M:%S")(new Date(queryInfo.queryStats.createTime)),
+                    queryInfo.query,
+                    queryInfo.session.user,
+                    queryInfo.state,
+                    completedSplits,
+                    splits,
+                    d3.format("%")(completedSplits / splits)
+                ]
+            })
             .enter()
             .append("td")
-            .text(function (d)
-                  {
-                      return d;
-                  });
-
+            .text(function (d) {
+                return d;
+            });
 }
 
-function renderRunningQueries(queries)
-{
+function renderRunningQueries(queries) {
     var tbody = d3.select("#running").select("tbody");
 
     queries = queries.sort(function (a, b) { return d3.ascending(a.queryStats.createTime, b.queryStats.createTime); });
@@ -145,34 +137,33 @@ function renderRunningQueries(queries)
     rows.enter()
             .append("tr")
             .attr("class", "info")
-            .on("click", function(query) { window.location = "query.html?" + query.queryId });
+            .on("click", function (query) { window.location = "query.html?" + query.queryId });
 
     var cells = rows.selectAll("td")
-            .data(function (queryInfo)
-                  {
-                      var stages = allStages(queryInfo.outputStage);
+            .data(function (queryInfo) {
+                var stages = allStages(queryInfo.outputStage);
 
-                      var tasks = flatten(stages.map(function (stage) { return stage.tasks; }));
+                var tasks = flatten(stages.map(function (stage) { return stage.tasks; }));
 
-                      var splits = d3.sum(tasks.map(function (task) { return task.stats.splits }));
-                      var startedSplits = d3.sum(tasks.map(function (task) { return task.stats.startedSplits }));
-                      var completedSplits = d3.sum(tasks.map(function (task) { return task.stats.completedSplits }));
+                var splits = d3.sum(tasks.map(function (task) { return task.stats.splits }));
+                var startedSplits = d3.sum(tasks.map(function (task) { return task.stats.startedSplits }));
+                var completedSplits = d3.sum(tasks.map(function (task) { return task.stats.completedSplits }));
 
-                      var runningSplits = startedSplits - completedSplits;
-                      var queuedSplits = splits - startedSplits;
+                var runningSplits = startedSplits - completedSplits;
+                var queuedSplits = splits - startedSplits;
 
-                      return [
-                          queryInfo.queryId,
-                          d3.time.format("%Y-%m-%d %H:%M:%S")(new Date(queryInfo.queryStats.createTime)),
-                          queryInfo.query,
-                          queryInfo.session.user,
-                          queryInfo.state,
-                          d3.format("%")(completedSplits / splits),
-                          queuedSplits,
-                          runningSplits,
-                          completedSplits
-                      ]
-                  });
+                return [
+                    queryInfo.queryId,
+                    d3.time.format("%Y-%m-%d %H:%M:%S")(new Date(queryInfo.queryStats.createTime)),
+                    queryInfo.query,
+                    queryInfo.session.user,
+                    queryInfo.state,
+                    d3.format("%")(completedSplits / splits),
+                    queuedSplits,
+                    runningSplits,
+                    completedSplits
+                ]
+            });
 
     cells.text(function (d) { return d; });
 
@@ -181,8 +172,7 @@ function renderRunningQueries(queries)
             .text(function (d) { return d; });
 }
 
-function allStages(stage)
-{
+function allStages(stage) {
     if (stage == undefined) {
         return [];
     }
@@ -195,9 +185,7 @@ function allStages(stage)
     return [stage].concat(flatten(substages));
 }
 
-
-function flatten(array)
-{
+function flatten(array) {
     return [].concat.apply([], array);
 }
 
