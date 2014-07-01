@@ -237,4 +237,10 @@ public class InMemoryMetadata
             return type;
         }
     }
+
+	@Override
+	public OutputTableHandle beginInsert(ConnectorTableMetadata tableMetadata) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

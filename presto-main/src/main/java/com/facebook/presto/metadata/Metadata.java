@@ -132,6 +132,11 @@ public interface Metadata
     void commitCreateTable(OutputTableHandle tableHandle, Collection<String> fragments);
 
     /**
+     * Begin Insert query
+     */
+    OutputTableHandle beginInsert(String catalogName, TableMetadata tableMetadata);
+    
+    /**
      * Gets all the loaded catalogs
      *
      * @return Map of catalog name to connector id

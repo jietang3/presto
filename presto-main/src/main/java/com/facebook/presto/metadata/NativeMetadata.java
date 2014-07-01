@@ -344,4 +344,10 @@ public class NativeMetadata
 
         shardManager.commitUnpartitionedTable(tableHandle, shards.build());
     }
+
+	@Override
+	public OutputTableHandle beginInsert(ConnectorTableMetadata tableMetadata) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

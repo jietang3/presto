@@ -72,6 +72,7 @@ tokens {
     USE_CATALOG;
     USE_SCHEMA;
     CREATE_TABLE;
+    INSERT_INTO_TABLE;
     DROP_TABLE;
     TABLE_ELEMENT_LIST;
     COLUMN_DEF;
@@ -156,6 +157,7 @@ statement
     | useCollectionStmt
     | createTableStmt
     | dropTableStmt
+    | insertIntoTableStmt
     ;
 
 query
@@ -604,6 +606,10 @@ createTableStmt
     : CREATE TABLE qname s=tableContentsSource -> ^(CREATE_TABLE qname $s)
     ;
 
+insertIntoTableStmt
+	: INSERT INTO TABLE? qname query -> ^(INSERT_INTO_TABLE qname query)
+	;
+
 tableContentsSource
     : AS query -> query
     ;
@@ -771,6 +777,8 @@ RECURSIVE: 'RECURSIVE';
 VALUES: 'VALUES';
 CREATE: 'CREATE';
 TABLE: 'TABLE';
+INSERT: 'INSERT';
+INTO: 'INTO';
 CHAR: 'CHAR';
 CHARACTER: 'CHARACTER';
 VARYING: 'VARYING';

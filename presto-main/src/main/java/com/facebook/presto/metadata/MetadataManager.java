@@ -240,6 +240,15 @@ public class MetadataManager
         checkArgument(connectorMetadata != null, "Catalog %s does not exist", catalogName);
         return connectorMetadata.getMetadata().beginCreateTable(tableMetadata.getMetadata());
     }
+    
+    @Override
+    public OutputTableHandle beginInsert(String catalogName, TableMetadata tableMetadata)
+    {
+        ConnectorMetadataEntry connectorMetadata = connectors.get(catalogName);
+        checkArgument(connectorMetadata != null, "Catalog %s does not exist", catalogName);
+        return connectorMetadata.getMetadata().beginInsert(tableMetadata.getMetadata());
+        
+    }
 
     @Override
     public void commitCreateTable(OutputTableHandle tableHandle, Collection<String> fragments)

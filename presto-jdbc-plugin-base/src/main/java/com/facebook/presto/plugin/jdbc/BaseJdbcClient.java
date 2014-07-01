@@ -227,6 +227,12 @@ public class BaseJdbcClient
     {
         throw new UnsupportedOperationException();
     }
+    
+    @Override
+    public JdbcOutputTableHandle beginInsert(ConnectorTableMetadata tableMetadata)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public void commitCreateTable(JdbcOutputTableHandle handle, Collection<String> fragments)

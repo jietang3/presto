@@ -298,4 +298,36 @@ public class MysqlJdbcClient
     public void commitCreateTable(JdbcOutputTableHandle handle, Collection<String> fragments)
     {
     }
+    
+    @Override
+    public JdbcOutputTableHandle beginInsert(ConnectorTableMetadata tableMetadata)
+    {
+    	ImmutableList.Builder<String> columnNames = ImmutableList.builder();
+        ImmutableList.Builder<ColumnType> columnTypes = ImmutableList.builder();
+        for (ColumnMetadata column : tableMetadata.getColumns()) {
+            columnNames.add(column.getName());
+            columnTypes.add(column.getType());
+        }
+        
+        // get the root directory for the database
+        SchemaTableName table = tableMetadata.getTable();
+        String schemaName = table.getSchemaName();
+        String tableName = table.getTableName();
+        
+        checkState(getTableHandle(table) != null, String.format("%s.%s does not exist!", schemaName, tableName));
+        
+        JdbcOutputTableHandle handle = new JdbcOutputTableHandle(
+        		connectorId,
+        		schemaName,
+        		null,
+        		tableName,
+        		columnNames.build(),
+        		columnTypes.build(),
+        		tableMetadata.getOwner(),
+        		"",
+        		"",
+        		new HashMap<String,String>());
+        
+        return handle;
+    }
 }

@@ -46,6 +46,8 @@ public interface JdbcClient
     String buildSql(JdbcSplit split, List<JdbcColumnHandle> columnHandles);
 
     JdbcOutputTableHandle beginCreateTable(ConnectorTableMetadata tableMetadata);
+    
+    JdbcOutputTableHandle beginInsert(ConnectorTableMetadata tableMetadata);
 
     void commitCreateTable(JdbcOutputTableHandle handle, Collection<String> fragments);
 

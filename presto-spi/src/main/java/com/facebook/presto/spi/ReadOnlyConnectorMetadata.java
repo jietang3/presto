@@ -53,4 +53,10 @@ public abstract class ReadOnlyConnectorMetadata
     {
         throw new UnsupportedOperationException();
     }
+    
+	@Override
+	public OutputTableHandle beginInsert(ConnectorTableMetadata tableMetadata)
+	{
+		throw new UnsupportedOperationException();
+	}
 }

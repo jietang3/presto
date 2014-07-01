@@ -13,6 +13,13 @@
  */
 package com.facebook.presto.server;
 
+import static com.google.inject.multibindings.MapBinder.newMapBinder;
+import static io.airlift.configuration.ConfigurationModule.bindConfig;
+import static io.airlift.discovery.client.DiscoveryBinder.discoveryBinder;
+import static io.airlift.http.client.HttpClientBinder.httpClientBinder;
+import static io.airlift.http.server.HttpServerBinder.httpServerBinder;
+import static org.weakref.jmx.guice.ExportBinder.newExporter;
+
 import com.facebook.presto.execution.DropTableExecution;
 import com.facebook.presto.execution.NodeScheduler;
 import com.facebook.presto.execution.NodeSchedulerConfig;
@@ -41,6 +48,7 @@ import com.facebook.presto.sql.analyzer.FeaturesConfig;
 import com.facebook.presto.sql.tree.CreateTable;
 import com.facebook.presto.sql.tree.DropTable;
 import com.facebook.presto.sql.tree.Explain;
+import com.facebook.presto.sql.tree.Insert;
 import com.facebook.presto.sql.tree.Query;
 import com.facebook.presto.sql.tree.ShowCatalogs;
 import com.facebook.presto.sql.tree.ShowColumns;
@@ -55,13 +63,6 @@ import com.google.inject.Key;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
-
-import static com.google.inject.multibindings.MapBinder.newMapBinder;
-import static io.airlift.configuration.ConfigurationModule.bindConfig;
-import static io.airlift.discovery.client.DiscoveryBinder.discoveryBinder;
-import static io.airlift.http.client.HttpClientBinder.httpClientBinder;
-import static io.airlift.http.server.HttpServerBinder.httpServerBinder;
-import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
 public class CoordinatorModule
         extends AbstractConfigurationAwareModule
@@ -133,5 +134,6 @@ public class CoordinatorModule
         executionBinder.addBinding(ShowCatalogs.class).to(SqlQueryExecution.SqlQueryExecutionFactory.class).in(Scopes.SINGLETON);
         executionBinder.addBinding(UseCollection.class).to(SqlQueryExecution.SqlQueryExecutionFactory.class).in(Scopes.SINGLETON);
         executionBinder.addBinding(CreateTable.class).to(SqlQueryExecution.SqlQueryExecutionFactory.class).in(Scopes.SINGLETON);
+        executionBinder.addBinding(Insert.class).to(SqlQueryExecution.SqlQueryExecutionFactory.class).in(Scopes.SINGLETON);
     }
 }

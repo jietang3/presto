@@ -992,4 +992,10 @@ public class HiveClient
             }
         };
     }
+
+	@Override
+	public OutputTableHandle beginInsert(ConnectorTableMetadata tableMetadata) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

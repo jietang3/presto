@@ -67,6 +67,7 @@ statement returns [Statement value]
     | useCollection             { $value = $useCollection.value; }
     | createTable               { $value = $createTable.value; }
     | dropTable                 { $value = $dropTable.value; }
+    | insertIntoTable           { $value = $insertIntoTable.value; }
     ;
 
 query returns [Query value]
@@ -554,3 +555,7 @@ createTable returns [Statement value]
 dropTable returns [Statement value]
     : ^(DROP_TABLE qname) { $value = new DropTable($qname.value); }
     ;
+
+insertIntoTable returns [Statement value]
+	: ^(INSERT_INTO_TABLE qname query) { $value = new Insert($qname.value, $query.value); }
+	;

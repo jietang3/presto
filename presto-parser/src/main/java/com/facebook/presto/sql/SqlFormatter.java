@@ -13,10 +13,18 @@
  */
 package com.facebook.presto.sql;
 
+import static com.facebook.presto.sql.ExpressionFormatter.expressionFormatterFunction;
+import static com.facebook.presto.sql.ExpressionFormatter.formatExpression;
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.Iterator;
+import java.util.List;
+
 import com.facebook.presto.sql.tree.AliasedRelation;
 import com.facebook.presto.sql.tree.AllColumns;
 import com.facebook.presto.sql.tree.AstVisitor;
 import com.facebook.presto.sql.tree.Expression;
+import com.facebook.presto.sql.tree.Insert;
 import com.facebook.presto.sql.tree.Join;
 import com.facebook.presto.sql.tree.JoinCriteria;
 import com.facebook.presto.sql.tree.JoinOn;
@@ -41,13 +49,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
-
-import java.util.Iterator;
-import java.util.List;
-
-import static com.facebook.presto.sql.ExpressionFormatter.expressionFormatterFunction;
-import static com.facebook.presto.sql.ExpressionFormatter.formatExpression;
-import static com.google.common.base.Preconditions.checkArgument;
 
 public final class SqlFormatter
 {
@@ -349,7 +350,14 @@ public final class SqlFormatter
 
             return null;
         }
-
+        
+		protected Void visitInsert(Insert node, Integer indent) {
+			builder.append("INSERT INTO TABLE ").append(node.getName())
+					.append(" ");
+			process(node.getQuery(), indent);
+			return null;
+		}
+        
         private StringBuilder append(int indent, String value)
         {
             return builder.append(indentString(indent))

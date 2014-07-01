@@ -61,7 +61,7 @@ public class JdbcOutputTableHandle
         this.catalogName = catalogName;
         this.schemaName = schemaName;
         this.tableName = checkNotNull(tableName, "tableName is null");
-        this.tableOwner = checkNotNull(tableOwner, "tableOwner is null");
+        this.tableOwner = tableOwner;
         this.temporaryTableName = checkNotNull(temporaryTableName, "temporaryTableName is null");
         this.connectionUrl = checkNotNull(connectionUrl, "connectionUrl is null");
         this.connectionProperties = ImmutableMap.copyOf(checkNotNull(connectionProperties, "connectionProperties is null"));

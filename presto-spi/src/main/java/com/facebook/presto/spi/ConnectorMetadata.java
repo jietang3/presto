@@ -106,6 +106,11 @@ public interface ConnectorMetadata
      * Begin the atomic creation of a table with data.
      */
     OutputTableHandle beginCreateTable(ConnectorTableMetadata tableMetadata);
+    
+    /**
+     * Begin the atomic insertion of a table with data.
+     */
+    OutputTableHandle beginInsert(ConnectorTableMetadata tableMetadata);
 
     /**
      * Commit a table creation with data after the data is written.

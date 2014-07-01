@@ -167,6 +167,14 @@ public class ClassLoaderSafeConnectorMetadata
             delegate.commitCreateTable(tableHandle, fragments);
         }
     }
+    
+    @Override
+    public OutputTableHandle beginInsert(ConnectorTableMetadata tableMetadata)
+    {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+            return delegate.beginInsert(tableMetadata);
+        }
+    }
 
     @Override
     public String toString()

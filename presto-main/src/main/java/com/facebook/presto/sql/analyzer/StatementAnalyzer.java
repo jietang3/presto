@@ -13,54 +13,12 @@
  */
 package com.facebook.presto.sql.analyzer;
 
-import com.facebook.presto.metadata.Metadata;
-import com.facebook.presto.metadata.MetadataUtil;
-import com.facebook.presto.metadata.QualifiedTableName;
-import com.facebook.presto.spi.ColumnMetadata;
-import com.facebook.presto.spi.TableHandle;
-import com.facebook.presto.sql.tree.Approximate;
-import com.facebook.presto.sql.tree.BooleanLiteral;
-import com.facebook.presto.sql.tree.Cast;
-import com.facebook.presto.sql.tree.CreateTable;
-import com.facebook.presto.sql.tree.DefaultTraversalVisitor;
-import com.facebook.presto.sql.tree.Explain;
-import com.facebook.presto.sql.tree.ExplainFormat;
-import com.facebook.presto.sql.tree.ExplainOption;
-import com.facebook.presto.sql.tree.ExplainType;
-import com.facebook.presto.sql.tree.Expression;
-import com.facebook.presto.sql.tree.IfExpression;
-import com.facebook.presto.sql.tree.LikePredicate;
-import com.facebook.presto.sql.tree.LongLiteral;
-import com.facebook.presto.sql.tree.QualifiedName;
-import com.facebook.presto.sql.tree.Query;
-import com.facebook.presto.sql.tree.QuerySpecification;
-import com.facebook.presto.sql.tree.SelectItem;
-import com.facebook.presto.sql.tree.ShowCatalogs;
-import com.facebook.presto.sql.tree.ShowColumns;
-import com.facebook.presto.sql.tree.ShowFunctions;
-import com.facebook.presto.sql.tree.ShowPartitions;
-import com.facebook.presto.sql.tree.ShowSchemas;
-import com.facebook.presto.sql.tree.ShowTables;
-import com.facebook.presto.sql.tree.SingleColumn;
-import com.facebook.presto.sql.tree.SortItem;
-import com.facebook.presto.sql.tree.StringLiteral;
-import com.facebook.presto.sql.tree.UseCollection;
-import com.facebook.presto.sql.tree.With;
-import com.facebook.presto.sql.tree.WithQuery;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import static com.facebook.presto.connector.informationSchema.InformationSchemaMetadata.TABLE_COLUMNS;
 import static com.facebook.presto.connector.informationSchema.InformationSchemaMetadata.TABLE_INTERNAL_FUNCTIONS;
 import static com.facebook.presto.connector.informationSchema.InformationSchemaMetadata.TABLE_INTERNAL_PARTITIONS;
 import static com.facebook.presto.connector.informationSchema.InformationSchemaMetadata.TABLE_SCHEMATA;
 import static com.facebook.presto.connector.informationSchema.InformationSchemaMetadata.TABLE_TABLES;
 import static com.facebook.presto.connector.system.CatalogSystemTable.CATALOG_TABLE_NAME;
-import static com.facebook.presto.sql.analyzer.Analyzer.ExpressionAnalysis;
 import static com.facebook.presto.sql.analyzer.SemanticErrorCode.COLUMN_NAME_NOT_SPECIFIED;
 import static com.facebook.presto.sql.analyzer.SemanticErrorCode.DUPLICATE_COLUMN_NAME;
 import static com.facebook.presto.sql.analyzer.SemanticErrorCode.DUPLICATE_RELATION;
@@ -85,6 +43,56 @@ import static com.facebook.presto.sql.tree.QueryUtil.table;
 import static com.facebook.presto.sql.tree.QueryUtil.unaliasedName;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import com.facebook.presto.metadata.Metadata;
+import com.facebook.presto.metadata.MetadataUtil;
+import com.facebook.presto.metadata.QualifiedTableName;
+import com.facebook.presto.metadata.TableMetadata;
+import com.facebook.presto.spi.ColumnMetadata;
+import com.facebook.presto.spi.ColumnType;
+import com.facebook.presto.spi.TableHandle;
+import com.facebook.presto.sql.analyzer.Analyzer.ExpressionAnalysis;
+import static com.facebook.presto.sql.analyzer.Field.typeGetter;
+import com.facebook.presto.sql.tree.Approximate;
+import com.facebook.presto.sql.tree.BooleanLiteral;
+import com.facebook.presto.sql.tree.Cast;
+import com.facebook.presto.sql.tree.CreateTable;
+import com.facebook.presto.sql.tree.DefaultTraversalVisitor;
+import com.facebook.presto.sql.tree.Explain;
+import com.facebook.presto.sql.tree.ExplainFormat;
+import com.facebook.presto.sql.tree.ExplainOption;
+import com.facebook.presto.sql.tree.ExplainType;
+import com.facebook.presto.sql.tree.Expression;
+import com.facebook.presto.sql.tree.IfExpression;
+import com.facebook.presto.sql.tree.Insert;
+import com.facebook.presto.sql.tree.LikePredicate;
+import com.facebook.presto.sql.tree.LongLiteral;
+import com.facebook.presto.sql.tree.QualifiedName;
+import com.facebook.presto.sql.tree.Query;
+import com.facebook.presto.sql.tree.QuerySpecification;
+import com.facebook.presto.sql.tree.SelectItem;
+import com.facebook.presto.sql.tree.ShowCatalogs;
+import com.facebook.presto.sql.tree.ShowColumns;
+import com.facebook.presto.sql.tree.ShowFunctions;
+import com.facebook.presto.sql.tree.ShowPartitions;
+import com.facebook.presto.sql.tree.ShowSchemas;
+import com.facebook.presto.sql.tree.ShowTables;
+import com.facebook.presto.sql.tree.SingleColumn;
+import com.facebook.presto.sql.tree.SortItem;
+import com.facebook.presto.sql.tree.StringLiteral;
+import com.facebook.presto.sql.tree.UseCollection;
+import com.facebook.presto.sql.tree.With;
+import com.facebook.presto.sql.tree.WithQuery;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import static com.google.common.collect.Iterables.elementsEqual;
+import static com.google.common.collect.Iterables.transform;
+
 
 class StatementAnalyzer
         extends DefaultTraversalVisitor<TupleDescriptor, AnalysisContext>
@@ -344,6 +352,53 @@ class StatementAnalyzer
                 Optional.<Approximate>absent());
 
         return process(query, context);
+    }
+
+    @Override
+    protected TupleDescriptor visitInsert(Insert node, AnalysisContext context)
+    {
+        analysis.setInsertDestination(node.getName());
+
+        // analyze the query that creates the data
+        TupleDescriptor descriptor = process(node.getQuery(), context);
+
+        // Get the columns for the destination table
+        // and verify that types match with output of query
+        QualifiedTableName targetTable = MetadataUtil.createQualifiedTableName(session, node.getName());
+        Optional<TableHandle> targetTableHandle = metadata.getTableHandle(targetTable);
+        if (!targetTableHandle.isPresent()) {
+            throw new SemanticException(MISSING_TABLE, node, "Destination table '%s' does not exists", targetTable);
+        }
+
+        TableMetadata tableMetadata = metadata.getTableMetadata(targetTableHandle.get());
+        List<ColumnMetadata> columns = tableMetadata.getColumns();
+
+        Iterable<ColumnType> colTypes = transform(columns, new Function<ColumnMetadata, ColumnType>()
+        {
+            @Override
+            public ColumnType apply(ColumnMetadata col)
+            {
+                return col.getType();
+            }
+        });
+
+        if (!elementsEqual(transform(descriptor.getFields(), typeGetter()), colTypes)) {
+            throw new SemanticException(SemanticErrorCode.MISMATCHED_SET_COLUMN_TYPES, node, "Insert query has mismatched columns");
+        }
+
+        return new TupleDescriptor(Field.newUnqualified("rows", Type.BIGINT));
+    }
+    
+    private static Function<Field, ColumnType> typeGetter()
+    {
+        return new Function<Field, ColumnType>()
+        {
+            @Override
+            public ColumnType apply(Field field)
+            {
+                return field.getType().getColumnType();
+            }
+        };
     }
 
     @Override

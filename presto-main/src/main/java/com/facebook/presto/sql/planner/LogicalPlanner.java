@@ -15,10 +15,13 @@ package com.facebook.presto.sql.planner;
 
 import com.facebook.presto.metadata.Metadata;
 import com.facebook.presto.metadata.QualifiedTableName;
+import com.facebook.presto.metadata.MetadataUtil;
 import com.facebook.presto.metadata.TableMetadata;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ColumnType;
 import com.facebook.presto.spi.ConnectorTableMetadata;
+import com.facebook.presto.spi.OutputTableHandle;
+import com.facebook.presto.spi.TableHandle;
 import com.facebook.presto.sql.analyzer.Analysis;
 import com.facebook.presto.sql.analyzer.Field;
 import com.facebook.presto.sql.analyzer.Session;
@@ -65,6 +68,9 @@ public class LogicalPlanner
         if (analysis.getCreateTableDestination().isPresent()) {
             plan = createTableWriterPlan(analysis);
         }
+        else if (analysis.getInsertDestination().isPresent()) {
+            plan = createInsertPlan(analysis);
+        }
         else {
             RelationPlanner planner = new RelationPlanner(analysis, symbolAllocator, idAllocator, metadata, session);
             plan = planner.process(analysis.getQuery(), null);
@@ -85,7 +91,55 @@ public class LogicalPlanner
         return new Plan(root, symbolAllocator);
     }
 
-    private RelationPlan createTableWriterPlan(Analysis analysis)
+    private RelationPlan createInsertPlan(Analysis analysis)
+    {
+        RelationPlanner planner = new RelationPlanner(analysis, symbolAllocator, idAllocator, metadata, session);
+        RelationPlan plan = planner.process(analysis.getQuery(), null);
+
+        QualifiedTableName destination = MetadataUtil.createQualifiedTableName(session, analysis.getInsertDestination().get());
+        String catalogName = session.getCatalog();
+        TableMetadata tableMetadata = null;
+
+        Optional<TableHandle> targetTableHandle = metadata.getTableHandle(destination);
+        checkState(targetTableHandle.isPresent(), "Table '%s' does not exist", destination);
+        tableMetadata = new TableMetadata(destination.getCatalogName(), metadata.getTableMetadata(targetTableHandle.get()).getMetadata());
+        catalogName = destination.getCatalogName();
+
+        ImmutableList<Symbol> writerOutputs = ImmutableList.of(
+                symbolAllocator.newSymbol("partialrows", Type.BIGINT),
+                symbolAllocator.newSymbol("fragment", Type.VARCHAR));
+
+        OutputTableHandle outputHandle = metadata.beginInsert(catalogName, tableMetadata);
+
+        TableWriterNode writerNode = new TableWriterNode(
+                idAllocator.getNextId(),
+                plan.getRoot(),
+                outputHandle,
+                plan.getOutputSymbols(),
+                getColumnNames(tableMetadata),
+                writerOutputs,
+                Optional.<Symbol>absent(),
+                null,
+                null,
+                metadata.canCreateSampledTables(destination.getCatalogName()));
+
+        List<Symbol> outputs = ImmutableList.of(symbolAllocator.newSymbol("rows", Type.BIGINT));
+
+        TableCommitNode commitNode = new TableCommitNode(
+                idAllocator.getNextId(),
+                writerNode,
+                null,
+                outputs);
+
+        return new RelationPlan(commitNode, analysis.getOutputDescriptor(), outputs);
+    }
+
+    private void checkState(boolean present, String string,
+			QualifiedTableName destination) {
+		// TODO Auto-generated method stub
+	}
+
+	private RelationPlan createTableWriterPlan(Analysis analysis)
     {
         QualifiedTableName destination = analysis.getCreateTableDestination().get();
 

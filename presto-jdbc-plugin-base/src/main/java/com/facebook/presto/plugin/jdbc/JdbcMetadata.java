@@ -201,4 +201,9 @@ public class JdbcMetadata
         JdbcOutputTableHandle handle = checkType(tableHandle, JdbcOutputTableHandle.class, "tableHandle");
         jdbcClient.commitCreateTable(handle, fragments);
     }
+
+	@Override
+	public OutputTableHandle beginInsert(ConnectorTableMetadata tableMetadata) {
+		return jdbcClient.beginInsert(tableMetadata);
+	}
 }
